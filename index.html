@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#673AB7" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Notes PWA</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    body {
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      color: #673AB7;
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      resize: none;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 12px 24px;
+      background-color: #673AB7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #512DA8;
+    }
+
+    .dark-mode {
+      background: #121212;
+      color: #fff;
+    }
+
+    .dark-mode .container {
+      background: #1e1e1e;
+      color: white;
+    }
+
+    .dark-mode textarea {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+    }
+
+    .toggle-dark {
+      background: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📒 Notes</h1>
+    <textarea id="note" placeholder="Write your notes here..."></textarea>
+    <br />
+    <button id="installButton" style="display: none;">Add to Home Screen</button>
+    <button id="toggleDark">Toggle Dark Mode</button>
+  </div>
+
+  <script>
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('serviceworker.js')
+        .then(() => console.log("Service Worker Registered"))
+        .catch(err => console.log("SW Registration Failed", err));
+    }
+
+    // A2HS Prompt
+    let deferredPrompt;
+    const installButton = document.getElementById('installButton');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installButton.style.display = 'inline-block';
+
+      installButton.addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the A2HS prompt');
+          } else {
+            console.log('User dismissed the A2HS prompt');
+          }
+          deferredPrompt = null;
+        });
+      });
+    });
+
+    // Auto-save notes
+    const textarea = document.getElementById('note');
+    textarea.value = localStorage.getItem('notes') || '';
+
+    textarea.addEventListener('input', () => {
+      localStorage.setItem('notes', textarea.value);
+    });
+
+    // Dark Mode Toggle
+    const darkToggle = document.getElementById('toggleDark');
+    const body = document.body;
+
+    // Remember dark mode setting
+    if (localStorage.getItem('dark') === 'enabled') {
+      body.classList.add('dark-mode');
+    }
+
+    darkToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-mode');
+      const isDark = body.classList.contains('dark-mode');
+      localStorage.setItem('dark', isDark ? 'enabled' : 'disabled');
+    });
+  </script>
+</body>
+</html>
